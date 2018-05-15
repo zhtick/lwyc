@@ -122,14 +122,17 @@ def fc16Data():
         temp = fc_main[['jknm']]
         fc_detail = pd.merge(fc_detail, temp)
         fc_detail.to_csv('{}/fc16/{}_16_detail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
-    print('end')
-# fc16对应的ddf，求△值
-def fc16Ddf():
     for meta_id in BIN.index:
-        fc_detail = pd.read_csv('{}{}_fair_detail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
-        fc_main = pd.read_csv('{}/fc16/{}_16_main.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
-        temp = fc_main[['jknm']]
-        fc_detail = pd.merge(fc_detail, temp)
-        fc_detail.to_csv('{}/fc16/{}_16_detail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
+        fc_main = pd.read_csv('{}/fc16/{}_16_main.csv'.format(PATH_DATA, BIN.loc[meta_id].ename))
+        fc_main.reset_index(drop = False)
+        fc_main.columns = ['rq', 'cm', 'cw', 'jknm', 'ww']
+        fc_detail = pd.read_csv('{}/fc16/{}_16_detail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
+        fc_detail = pd.merge(fc_main, fc_detail)
+        fc_detail.to_csv('{}/fc16_total/{}_16_total.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
+        print('this is {} start'.format(BIN.loc[meta_id].ename))
+#继续对detail中的数据进行处理，处理成△值
+#def dataBh():
+ #   for meta_id in BIN.index:
+
 
 
