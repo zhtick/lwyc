@@ -131,8 +131,16 @@ def fc16Data():
         fc_detail.to_csv('{}/fc16_total/{}_16_total.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
         print('this is {} start'.format(BIN.loc[meta_id].ename))
 #继续对detail中的数据进行处理，处理成△值
-#def dataBh():
- #   for meta_id in BIN.index:
+#继续对detail中的数据进行处理，处理成△值
+def dataBh():
+    for meta_id in BIN.index:
+        fcdetail = pd.read_csv('{}/fc16_total/{}_16_total.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
+        test = fcdetail.copy()
+        test = test[['level', 'col', 'row', 'rq', 'cw', 'ww', 'lw']]
+        test = test.set_index(['level', 'col', 'row', 'rq'])
+        daysData = test.unstack()
+        daysData.to_csv('{}/fc16_total/{}_16_daydetail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
+
 
 
 
