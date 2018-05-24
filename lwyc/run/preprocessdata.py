@@ -121,17 +121,20 @@ def fc16Data():
         fc_main = pd.read_csv('{}/fc16/{}_16_main.csv'.format(PATH_DATA, BIN.loc[meta_id].ename))
         temp = fc_main[['jknm']]
         fc_detail = pd.merge(fc_detail, temp)
+        #connection = getcon()
+        #pd.io.sql.to_sql(fc_main, 'main', connection, schema='test', if_exists='append', index=False)
         fc_detail.to_csv('{}/fc16/{}_16_detail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
-    for meta_id in BIN.index:
+
+    '''for meta_id in BIN.index:
         fc_main = pd.read_csv('{}/fc16/{}_16_main.csv'.format(PATH_DATA, BIN.loc[meta_id].ename))
         fc_main.reset_index(drop = False)
         fc_main.columns = ['rq', 'cm', 'cw', 'jknm', 'ww']
         fc_detail = pd.read_csv('{}/fc16/{}_16_detail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
         fc_detail = pd.merge(fc_main, fc_detail)
         fc_detail.to_csv('{}/fc16_total/{}_16_total.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
-        print('this is {} start'.format(BIN.loc[meta_id].ename))
+        print('this is {} start'.format(BIN.loc[meta_id].ename))'''
 #继续对detail中的数据进行处理，处理成△值
-def dataBh():
+'''def dataBh():
     for meta_id in BIN.index:
         fcdetail = pd.read_csv('{}/fc16_total/{}_16_total.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
         test = fcdetail.copy()
@@ -139,6 +142,95 @@ def dataBh():
         test = test.set_index(['level', 'col', 'row', 'rq'])
         daysData = test.unstack()
         daysData.to_csv('{}/fc16_total/{}_16_daydetail.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
+'''
+#使用loc函数，求主表△值，第一条数据无法取，设为0
+def mainBh():
+    for meta_id in BIN.index:
+        fc_main = pd.read_csv('{}/fc16/{}_16_main.csv'.format(PATH_DATA, BIN.loc[meta_id].ename))
+        fc_main.reset_index(drop=False)
+        fc_main.columns = ['rq', 'cm', 'cw', 'jknm', 'ww']
+        test = fc_main.copy()
+        print(test)
+        hs = 1
+        while hs in fc_main.index:
+            test.loc[hs , ['cw']] = (fc_main.loc[hs, ['cw']] - fc_main.loc[hs-1, ['cw']])['cw']
+            test.loc[hs, ['ww']] = (fc_main.loc[hs, ['ww']] - fc_main.loc[hs - 1, ['ww']])['ww']
+            hs = hs+1
+        test.loc[0,['cw']] = 0
+        test.loc[0, ['ww']] = 0
+        test.to_csv('{}/fc16/{}_16_mainBh.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), encoding='utf-8')
+#明细数据的处理，用了比较笨的办法，每个点处理成一个csv文件
+def detailFd():
+    for meta_id in BIN.index:
+        l = 1 # level
+        c = 1 # column
+        if (meta_id == 1 or meta_id == 2):
+            r = 4  # row
+        elif (meta_id == 7 or meta_id == 8):
+            r = 1
+        else:
+            r = 13
+        tmp_r = r
+        tmp_c = c
+        fc_main = pd.read_csv('{}/fc16/{}_16_mainBh.csv'.format(PATH_DATA, BIN.loc[meta_id].ename))
+        fc_main = fc_main[['jknm']]
+        fcdetail = pd.read_csv('{}/fc16_total/{}_16_total.csv'.format(PATH_DATA, BIN.loc[meta_id].ename), index_col=0)
+        test = fcdetail.copy()
+        test = test[['jknm', 'level', 'col', 'row', 'rq', 'lw']]
+        test = pd.merge(test, fc_main)
+        while l >= BIN.loc[meta_id].bottom and  l <= BIN.loc[meta_id].top:
+            r = tmp_r
+            c = tmp_c
+            while c >= BIN.loc[meta_id].near and  c <= BIN.loc[meta_id].far:
+                r = tmp_r
+                while r >=BIN.loc[meta_id].left and  r <= BIN.loc[meta_id].right:
+                    temp = test.loc[test['level'] == l]
+                    temp = temp.loc[temp['col'] == c]
+                    temp = temp.loc[temp['row'] == r]
+                    temp.to_csv('{}/fd16/BIN{}/{}_l{}_c{}_r{}_16_fdlw.csv'.format(PATH_DATA,meta_id, BIN.loc[meta_id].ename, l, c, r), encoding='utf-8')
+                    r = r+1
+                    print(c,l)
+                c = c+1
+            l=l+1
+# 求每个点粮温△值
+def detailBh():
+    for meta_id in BIN.index:
+        l = 1 # level
+        c = 1 # column
+        if (meta_id == 1 or meta_id == 2):
+            r = 4  # row
+        elif (meta_id == 7 or meta_id == 8):
+            r = 1
+        else:
+            r = 13
+        tmp_r = r
+        tmp_c = c
+        while l >= BIN.loc[meta_id].bottom and l <= BIN.loc[meta_id].top:
+            r = tmp_r
+            c = tmp_c
+            while c >= BIN.loc[meta_id].near and c <= BIN.loc[meta_id].far:
+                r = tmp_r
+                while r >= BIN.loc[meta_id].left and r <= BIN.loc[meta_id].right:
+                    temp = pd.read_csv('{}/fd16/BIN{}/{}_l{}_c{}_r{}_16_fdlw.csv'.format(PATH_DATA, meta_id, BIN.loc[meta_id].ename, l,c, r), index_col=0)
+                    temp = temp.reset_index()
+                    test = temp.copy()
+                    for i in temp.index:
+                        if i == temp.index[-1]:
+                            break
+                        test.loc[i+1,['lw']] = (temp.loc[i+1,['lw']]-temp.loc[i,['lw']])['lw']
+                    test.loc[0,['lw']] = 0
+                    test.to_csv('{}/fd/BIN{}/{}_l{}_c{}_r{}_16_fdlw.csv'.format(PATH_DATA, meta_id,BIN.loc[meta_id].ename, l, c, r),encoding='utf-8')
+                    r = r + 1
+                c = c+1
+            l = l+1
+
+
+
+
+
+
+
+
 
 
 

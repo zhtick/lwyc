@@ -3,6 +3,11 @@
 '''
 import pymysql
 from pandas import DataFrame
+from sqlalchemy import create_engine
+
+def getcon():
+    yconnect = create_engine('mysql+mysqldb://root:lcwkd123@localhost:3306/test?charset=utf8')
+    return yconnect
 
 def readdb(cmd, server= "10.24.18.101", user= "root", passwd= "lcwkd123", db= "zfdb"):
     connection = pymysql.connect(server, user, passwd, db, charset="GBK")
